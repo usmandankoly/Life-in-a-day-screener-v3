@@ -1,0 +1,23 @@
+# Environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Cache
+cache/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+*.log
+
+# Local data
+*.xlsx
+*.xls
+*.csv
+
+# Secrets
+.streamlit/secrets.toml
