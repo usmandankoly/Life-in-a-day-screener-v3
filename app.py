@@ -414,79 +414,66 @@ async def screen_video_with_llm(video_data, transcript=None, model_name="gpt-4o-
         
         # Add the vlog screener prompt
         prompt += """
-        ################################################################
-        #  ULTRA-SENSITIVE VLOG SCREENER – MAXIMUM RECALL  (v4-2025-05) #
-        ################################################################
+         ####################################################################
+         #  HIGH-PRECISION VLOG SCREENER – REVISED & ROBUST (v2-2025)        #
+         ####################################################################
 
-        TASK: You are an expert screener for daily vlog content with MAXIMUM SENSITIVITY.
-        Your primary goal is to NEVER miss potentially eligible "day in the life" videos.
+         TASK: You are an expert screener for "day in the life" vlog content with MAXIMUM PRECISION.
+         Your primary goal is to ONLY include videos that are DEFINITIVELY a personal log of a single, ordinary day.
 
-        CONTEXT:
-        - Available data may be sparse (only title, description, hashtags, channel name, duration)
-        - Transcripts are often unavailable, which severely limits assessment capabilities
-        - If any field is missing, ALWAYS treat it as "unknown", NEVER as negative evidence
-        - When in doubt, ALWAYS favor INCLUSION - false positives are STRONGLY PREFERRED over false negatives
+         CONTEXT:
+         - Prioritize SPECIFICITY over sensitivity. It is better to miss a potentially eligible video (a false negative) than to include a non-vlog (a false positive).
+         - When in doubt, ALWAYS favor EXCLUSION. Absence of clear vlog indicators is evidence AGAINST inclusion, especially with sparse data.
+         - Judge the video's content as the primary source of truth. Metadata like title and description are strong signals, but the narrative content is decisive.
 
-        ------------------------------------
-        DECISION FRAMEWORK:
+         ------------------------------------
+         DECISION FRAMEWORK:
 
-        - **INCLUDE** when ANY of these apply:
-          - ANY indication of single-day narrative (terms like "day", "daily", "routine", etc.)
-          - First-person language ("I", "my", "me") + any activity mention
-          - Video duration 3-60 minutes without clear exclusion evidence
-          - Personal/individual channel rather than corporate
-          - Relevant hashtags (#vlog, #dayinmylife, #dailyroutine, etc.)
-          - Ordinary activities mentioned (waking up, eating, working, studying)
-          - Location suggesting personal experience ("living in X", "life in X")
-          - ANY strong indicator without clear contradictory evidence
-          - Information is extremely limited but no exclusionary evidence
-          - Potentially mixed content with possible daily vlog elements
-          - Unclear if single day or multiple days
-          - Language barriers prevent confident assessment
-          - Duration is 2-3 minutes without other clear indicators
+         - **INCLUDE** ONLY when there is a convergence of strong, positive evidence. Requires meeting the Single-Day Narrative rule AND at least THREE other Inclusion Signals.
+             - **Single-Day Narrative (Mandatory):** The video explicitly or implicitly chronicles a sequence of events within a single 24-hour period.
+             - **Inclusion Signals (at least 2 required):**
+                 - **Temporal Progression:** Clear markers of time passing (e.g., waking up, morning routine, lunch, evening activities).
+                 - **Mundane Activity Montage:** Documents multiple, ordinary daily activities (e.g., making coffee, commuting, working/studying, running errands, cooking dinner).
+                 - **First-Person Perspective:** A clear personal viewpoint is present, shown through first-person narration ("I," "my"), on-screen text, or a consistent point-of-view (POV) camera angle.
+                 - **Setting Variety:** Showcases multiple everyday locations relevant to a daily routine (e.g., home, office, gym, grocery store).
+                 - **Personal Context:** The narrator references their ongoing life, feelings, or personal circumstances, providing a sense of authenticity.
+                 - Strong vlog indicators are present, but the single-day narrative is ambiguous.
+                 - The video blends a daily vlog with another format (e.g., a "day in the life of a chef" that becomes a 20-minute cooking tutorial).
+                 - Evidence for inclusion and exclusion is present and of similar weight.
+                 - Multi-Day or Summary Content:** The narrative explicitly covers more than one day (e.g., "A week in my life," "My trip to Japan," "Monthly favorites").
 
-        - **EXCLUDE** ONLY when you are ABSOLUTELY CERTAIN of ANY:
-          - EXPLICITLY states multiple days/weeks ("week in my life", "monthly recap")
-          - Under 2 minutes AND no vlog terminology in title/description
-          - EXPLICITLY purely commercial (ad, sponsor, product review ONLY)
-          - EXPLICITLY fictional/scripted (trailer, movie, TV episode)
-          - CLEARLY just photos/slideshow with NO narrative elements
-          - EXPLICITLY focused on tourist attractions, guided tours, or travel highlights WITHOUT showing the creator's daily routines or personal experiences
+         - **EXCLUDE** when ANY of these Exclusion Triggers are present with moderate certainty. A single strong trigger outweighs multiple weak inclusion signals.
+             - **Exclusion Triggers:**
+                 - **Topic-Driven, Not Time-Driven:** The video is structured around a single topic, theme, or event (e.g., "How to fix a sink," "My concert experience," "Reviewing the new iPhone").
+                 - **Pure Entertainment/Format Content:** The primary format is a reaction, challenge, skit, listicle, commentary, or news report.
+                 - **Promotional/Commercial Focus:** The video's main purpose is to sell a product, promote a brand, or review sponsored items, rather than document personal life.
+                 - **Travelogue/Tourism Focus:** Content is centered on showcasing attractions, destinations, or holiday activities rather than the personal, mundane experience of a day.
 
-        ------------------------------------
-        INCLUSION-CUES ACROSS LANGUAGES
-        (English, Dutch, French, Swahili examples - apply to ALL languages)
+         ------------------------------------
+         CRUCIAL GUIDANCE & SPECIAL INSTRUCTIONS:
 
-        - Phrases → "day in my life", "daily routine", "morning to night", "kom een dag mee",
-          "journée ordinaire", "siku yangu", "ma vie quotidienne", "mijn dag", etc.
+         - **Atypical Vlog Formats:** Be aware that a video can be a 'day in the life' vlog even with minimal or no narration (e.g., 'silent vlogs,' ASMR vlogs). Focus on the visual storytelling of a daily routine. High production quality does not automatically disqualify a video if the content is personal documentation.
 
-        - Hashtags → #vlog, #dayinthelife, #dailyroutine, #vlogmas, #mavlog, #vlogquotidien
+         - **Duration is a Guideline, Not a Rule:** Evaluate content regardless of length. While many vlogs are 10-30 minutes, valid short-form 'day in my life' videos (<5 mins) are common. The key is the narrative sequence of a day's events, not a specific runtime.
 
-        - First-person → "I", "my day", "come with me", "join me", "ik", "je", "mijn", "mon", "ma", "yangu"
+         - **Data Sparsity Handling:** If the transcript is missing or partial, weigh the title, description, and hashtags more heavily. Lack of a transcript is not an exclusion trigger on its own if other strong inclusion signals are present.
 
-        - Activities → work, study, cooking, commute, shopping, cleaning, morning routine
+         - **Multilingual Keywords:** Look for common vlog-related keywords across languages, such as: `vlog`, `daily vlog`, `day in the life`, `日常` (rìcháng), `mi día`, `мой день`, `mon quotidien`, `meu dia`, `mein Tag`.
 
-        ------------------------------------
-        CRUCIAL GUIDANCE:
-        - When information is limited, ALWAYS default to INCLUDE, NEVER EXCLUDE
-        - A single indicator of daily vlog content outweighs multiple ambiguous factors
-        - Apply extremely high threshold for exclusion (99% certainty required)
-        - Apply extremely low threshold for inclusion (even 20-30% possibility is sufficient)
-        - Only exclude based on EXPLICIT contradictory evidence, never assumptions
+         ------------------------------------
+         OUTPUT (JSON)
 
-        ------------------------------------
-        OUTPUT (JSON)
+         Your output must be a single, valid JSON object.
 
-        {
-          "decision": "INCLUDE|EXCLUDE",
-          "confidence": 1-5,
-          "cues_found": ["list", "of", "all", "day-in-life", "indicators"],
-          "exclusion_evidence": ["list", "of", "exclusion", "evidence", "or", "empty"],
-          "reasoning": "Brief explanation emphasizing why included or excluded"
-        }
+         {
+         "decision": "INCLUDE|EXCLUDE",
+         "confidence": "A numerical score from 1 (very uncertain) to 5 (certain).",
+         "identified_inclusion_signals": ["List", "the specific", "Inclusion Signals", "you confirmed from the framework."],
+         "identified_exclusion_triggers": ["List", "any Exclusion Triggers", "you identified.", "Leave empty if none."],
+         "classification_reasoning": "A detailed analysis of the evidence. Explain how you weighed the signals and triggers, referencing specific details from the video's title, description, or transcript to justify your final decision. Mention if you applied special guidance (e.g., for atypical formats or data sparsity)."
+         }
 
-        REMEMBER: The goal is 100% RECALL - include ANYTHING that might possibly be a day-in-life vlog.
-        """
+         REMEMBER: The goal is PRECISION. Only include videos that are definitively "day in the life" vlogs with high, justifiable confidence. """
         
         # Call OpenAI API with error handling and retries
         try:
