@@ -729,73 +729,144 @@ async def process_videos(df, progress_bar=None):
     else:
         st.warning("No results were produced!")
         return None
+    
+def display_video_example(video_data, key_prefix="", width=360, height=200):
+    """Display a video thumbnail with basic info and decision, using unique widget keys."""
+    # Extract unique video identifier
+    video_id = extract_video_id(video_data['url'])
+    if not video_id:
+        st.write("No thumbnail available")
+        return
 
-def display_video_example(video_data, width=360, height=200):
-    """Display a video thumbnail with basic info and decision."""
+    # Combine prefix with video_id to ensure unique keys
+    unique_id = f"{key_prefix}_{video_id}"
+
+    # Layout columns
     col1, col2 = st.columns([1, 3])
-    
+
+    # Column 1: selection checkbox and thumbnail
     with col1:
-        video_id = extract_video_id(video_data['url'])
-        if video_id:
-            # Add checkbox for bulk selection
-            is_selected = video_id in st.session_state.selected_videos
-            if st.checkbox("Select", value=is_selected, key=f"select_{video_id}"):
-                if video_id not in st.session_state.selected_videos:
-                    st.session_state.selected_videos.append(video_id)
-            else:
-                if video_id in st.session_state.selected_videos:
-                    st.session_state.selected_videos.remove(video_id)
-                    
-            # Display thumbnail
-            thumbnail_url = f"https://img.youtube.com/vi/{video_id}/0.jpg"
-            st.image(thumbnail_url, use_column_width=True)
-            
-            # Add embedded YouTube player
-            st.write("Preview:")
-            st.components.v1.iframe(
-                f"https://www.youtube.com/embed/{video_id}", 
-                width=250, 
-                height=150,
-                scrolling=True
-            )
+        is_selected = video_id in st.session_state.selected_videos
+        if st.checkbox("Select", value=is_selected, key=f"select_{unique_id}"):
+            if video_id not in st.session_state.selected_videos:
+                st.session_state.selected_videos.append(video_id)
         else:
-            st.write("No thumbnail available")
-    
+            if video_id in st.session_state.selected_videos:
+                st.session_state.selected_videos.remove(video_id)
+
+        # Display thumbnail and preview
+        thumbnail_url = f"https://img.youtube.com/vi/{video_id}/0.jpg"
+        st.image(thumbnail_url, use_column_width=True)
+        st.write("Preview:")
+        st.components.v1.iframe(
+            f"https://www.youtube.com/embed/{video_id}",
+            width=250,
+            height=150,
+            scrolling=True
+        )
+
+    # Column 2: video details and decision dropdown
     with col2:
         st.markdown(f"**{video_data['title']}**")
-        
-        # Display decision with dropdown for custom categories if present
+
+        # Decision dropdown with custom categories
         all_categories = ["INCLUDE", "EXCLUDE"] + st.session_state.custom_categories
-        current_decision = video_data['decision']
+        current_decision = video_data.get('decision', 'INCLUDE')
         new_decision = st.selectbox(
-            "Decision", 
+            "Decision",
             options=all_categories,
             index=all_categories.index(current_decision) if current_decision in all_categories else 0,
-            key=f"decision_{video_id}"
+            key=f"decision_{unique_id}"
         )
-        
-        # If decision was changed, update it
+
+        # Update decision if changed
         if new_decision != current_decision and st.session_state.final_df is not None:
             idx = st.session_state.final_df[st.session_state.final_df['id'] == video_id].index
             if len(idx) > 0:
                 st.session_state.final_df.loc[idx, 'decision'] = new_decision
-        
-        st.markdown(f"**Confidence**: {video_data['confidence']}")
-        
-        # Display cues if available
-        if 'cues_found' in video_data and video_data['cues_found']:
+
+        # Additional metadata display
+        st.markdown(f"**Confidence**: {video_data.get('confidence', '')}")
+        if video_data.get('cues_found'):
             st.markdown(f"**Cues**: {video_data['cues_found']}")
-        
-        # Display exclusion evidence if available and not empty
-        if 'exclusion_evidence' in video_data and video_data['exclusion_evidence']:
+        if video_data.get('exclusion_evidence'):
             st.markdown(f"**Exclusion Evidence**: {video_data['exclusion_evidence']}")
-        
-        st.markdown(f"**Reasoning**: {video_data['reasoning']}")
-        if 'transcript_available' in video_data:
-            st.markdown(f"**Transcript**: {video_data['transcript_available']}")
-        
-        # Add a link to the video
+
+        # Reasoning and transcript availability
+        st.markdown(f"**Reasoning**: {video_data.get('reasoning', '')}")
+        if video_data.get('transcript_available'):
+            st.markdown(f"**Transcript Available**: {video_data['transcript_available']}")
+
+        # Link to watch the video
         st.markdown(f"[Watch Video]({video_data['url']})")
+
+
+# def display_video_example(video_data, width=360, height=200):
+#     """Display a video thumbnail with basic info and decision."""
+#     col1, col2 = st.columns([1, 3])
+    
+#     with col1:
+#         video_id = extract_video_id(video_data['url'])
+#         if video_id:
+#             # Add checkbox for bulk selection
+#             is_selected = video_id in st.session_state.selected_videos
+#             if st.checkbox("Select", value=is_selected, key=f"select_{video_id}"):
+#                 if video_id not in st.session_state.selected_videos:
+#                     st.session_state.selected_videos.append(video_id)
+#             else:
+#                 if video_id in st.session_state.selected_videos:
+#                     st.session_state.selected_videos.remove(video_id)
+                    
+#             # Display thumbnail
+#             thumbnail_url = f"https://img.youtube.com/vi/{video_id}/0.jpg"
+#             st.image(thumbnail_url, use_column_width=True)
+            
+#             # Add embedded YouTube player
+#             st.write("Preview:")
+#             st.components.v1.iframe(
+#                 f"https://www.youtube.com/embed/{video_id}", 
+#                 width=250, 
+#                 height=150,
+#                 scrolling=True
+#             )
+#         else:
+#             st.write("No thumbnail available")
+    
+#     with col2:
+#         st.markdown(f"**{video_data['title']}**")
+        
+#         # Display decision with dropdown for custom categories if present
+#         all_categories = ["INCLUDE", "EXCLUDE"] + st.session_state.custom_categories
+#         current_decision = video_data['decision']
+#         new_decision = st.selectbox(
+#             "Decision", 
+#             options=all_categories,
+#             index=all_categories.index(current_decision) if current_decision in all_categories else 0,
+#             key=f"decision_{video_id}"
+#         )
+        
+#         # If decision was changed, update it
+#         if new_decision != current_decision and st.session_state.final_df is not None:
+#             idx = st.session_state.final_df[st.session_state.final_df['id'] == video_id].index
+#             if len(idx) > 0:
+#                 st.session_state.final_df.loc[idx, 'decision'] = new_decision
+        
+#         st.markdown(f"**Confidence**: {video_data['confidence']}")
+        
+#         # Display cues if available
+#         if 'cues_found' in video_data and video_data['cues_found']:
+#             st.markdown(f"**Cues**: {video_data['cues_found']}")
+        
+#         # Display exclusion evidence if available and not empty
+#         if 'exclusion_evidence' in video_data and video_data['exclusion_evidence']:
+#             st.markdown(f"**Exclusion Evidence**: {video_data['exclusion_evidence']}")
+        
+#         st.markdown(f"**Reasoning**: {video_data['reasoning']}")
+#         if 'transcript_available' in video_data:
+#             st.markdown(f"**Transcript**: {video_data['transcript_available']}")
+        
+#         # Add a link to the video
+#         st.markdown(f"[Watch Video]({video_data['url']})")
 
 def send_notification_email(subject, message, to_email):
     """Send notification email when batch processing completes."""
